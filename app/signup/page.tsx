@@ -116,16 +116,15 @@ export default function SignupPage() {
       const loginData = await handleApiResponse(loginResponse)
 
       tokenRef.current = loginData.access_token
-      localStorage.setItem("authToken", loginData.access_token)
-      localStorage.setItem("username", createData.username)
       setUsername(createData.username)
 
       const decodedToken = jwtDecode<TokenPayload>(loginData.access_token)
       const userRole = decodedToken.role
 
+      setAuthData(loginData.access_token, createData.username, userRole)
+
       if (userRole === "admin") {
         setApiMessage("Admin account verified! Redirecting to dashboard...")
-        window.dispatchEvent(new Event("storage"))
         setTimeout(() => {
           router.push("/admin/dashboard")
         }, 2000)

@@ -29,15 +29,15 @@ interface Counselor {
   meeting_location: string;
 }
 
-export default function AdminCounselors() {
+export default function CounselorAvailabilityPage() {
     return (
         <ProtectedRoute requiredRole="admin">
-            <AdminCounselorsContent />
+            <CounselorAvailabilityContent />
         </ProtectedRoute>
     );
 }
 
-function AdminCounselorsContent() {
+function CounselorAvailabilityContent() {
   const [username, setUsername] = useState("Admin");
   const [counselors, setCounselors] = useState<Counselor[]>([]);
   const [loading, setLoading] = useState(true);

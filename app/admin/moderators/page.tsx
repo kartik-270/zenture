@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import { Users, Activity, BookOpen, ChevronLeft, ChevronRight } from "lucide-react";
 import AdminLayout from "@/components/admin/layout";
 import { apiConfig } from "@/lib/config";
+import { getAuthToken } from "@/lib/auth";
 import { useToast } from "@/components/ui/use-toast";
 import { ProtectedRoute } from "@/components/protected-route";
 
@@ -43,7 +44,7 @@ function ModeratorsContent() {
     const fetchModerators = async (page: number) => {
         setLoading(true);
         try {
-            const token = localStorage.getItem("authToken");
+            const token = getAuthToken();
             const res = await fetch(`${apiConfig.baseUrl}/admin/moderators?page=${page}&per_page=10`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
@@ -66,7 +67,7 @@ function ModeratorsContent() {
         if (!window.confirm(`Are you sure you want to revoke Moderator status from ${targetUsername}? They will be demoted to Student.`)) return;
 
         try {
-            const token = localStorage.getItem("authToken");
+            const token = getAuthToken();
             const res = await fetch(`${apiConfig.baseUrl}/admin/revoke_moderator`, {
                 method: "POST",
                 headers: {

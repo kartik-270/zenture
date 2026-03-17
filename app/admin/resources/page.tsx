@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import AdminLayout from "@/components/admin/layout";
 import { apiConfig } from "@/lib/config";
+import { getAuthToken } from "@/lib/auth";
 import { useToast } from "@/components/ui/use-toast";
 import { ProtectedRoute } from "@/components/protected-route";
 
@@ -76,7 +77,7 @@ function AdminResourcesContent() {
 
   const fetchResources = async () => {
     try {
-      const token = localStorage.getItem("authToken");
+      const token = getAuthToken();
       const res = await fetch(`${apiConfig.baseUrl}/admin/resources`, {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -93,7 +94,7 @@ function AdminResourcesContent() {
 
   const handleStatusChange = async (id: number, newStatus: string) => {
     try {
-      const token = localStorage.getItem("authToken");
+      const token = getAuthToken();
       const res = await fetch(`${apiConfig.baseUrl}/admin/resource/${id}/status`, {
         method: "PUT",
         headers: {
@@ -117,7 +118,7 @@ function AdminResourcesContent() {
     if (!confirm("Are you sure you want to delete this resource?")) return;
 
     try {
-      const token = localStorage.getItem("authToken");
+      const token = getAuthToken();
       const res = await fetch(`${apiConfig.baseUrl}/admin/resources/${id}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` }
@@ -156,7 +157,7 @@ function AdminResourcesContent() {
   const handleSubmit = async () => {
     setIsUploading(true);
     try {
-      const token = localStorage.getItem("authToken");
+      const token = getAuthToken();
       let mediaUrl = formData.url;
 
       if (selectedFile) {

@@ -16,6 +16,7 @@ import {
     MessageCircle,
     Shield
 } from "lucide-react";
+import { logout } from "@/lib/auth";
 
 interface AdminLayoutProps {
     children: React.ReactNode;
@@ -41,8 +42,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children, title, icon, userna
     const router = useRouter();
 
     const handleLogout = () => {
-        localStorage.removeItem("authToken");
-        localStorage.removeItem("username");
+        logout();
         router.push("/login");
     };
 
@@ -64,7 +64,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children, title, icon, userna
             {/* Sidebar Overlay for Mobile */}
             {isSidebarOpen && (
                 <div
-                    className="fixed inset-0 bg-black bg-opacity-50 z-40 md:hidden"
+                    className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-40 md:hidden animate-in fade-in duration-300"
                     onClick={() => setIsSidebarOpen(false)}
                 />
             )}

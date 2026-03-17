@@ -89,7 +89,7 @@ function ResourcesContent() {
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(true);
 
-  const filters = ["all", "article", "video", "audio", "exercise"];
+  const filters = ["all", "article", "video", "audio", "exercise", "wellness"];
   const languages = ["all", "English", "Hindi", "Marathi", "Bengali", "Tamil", "Telugu", "Kannada", "Malayalam"];
 
   useEffect(() => {
@@ -144,13 +144,17 @@ function ResourcesContent() {
 
   const filteredData = resources.filter(item => {
     const matchesFilter = activeFilter === 'all' || item.type === activeFilter;
-    // Assuming API resources might have a language field, static ones default to English
     const itemLanguage = (item as any).language || "English";
     const matchesLanguage = activeLanguage === 'all' || itemLanguage === activeLanguage;
     const matchesSearch = item.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
                           item.description.toLowerCase().includes(searchTerm.toLowerCase());
     return matchesFilter && matchesLanguage && matchesSearch;
   });
+
+  // Include Wellness Corner in the list if it matches filters
+  const showWellnessCorner = (activeFilter === 'all' || activeFilter === 'wellness') && 
+                            (activeLanguage === 'all' || activeLanguage === 'English') &&
+                            ("Daily Wellness Corner".toLowerCase().includes(searchTerm.toLowerCase()));
 
   const getPlaceholderImage = (type: string) => {
     switch (type) {
@@ -243,10 +247,12 @@ function ResourcesContent() {
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
-              {/* Daily Wellness Corner card — always first */}
-              <div className="lg:col-span-1">
-                <DailyWellnessCorner />
-              </div>
+              {/* Daily Wellness Corner card — integrated into grid */}
+              {showWellnessCorner && (
+                <div className="lg:col-span-1">
+                  <DailyWellnessCorner />
+                </div>
+              )}
 
               {filteredData.length > 0 ? (
                 filteredData.map((item, index) => (

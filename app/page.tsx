@@ -9,13 +9,18 @@ import { PlatformFeatures } from '@/components/platform-features';
 import { Footer } from '@/components/footer';
 import { MoodCheckinModal } from '@/components/mood-checkin-modal';
 import { Button } from '@/components/ui/button';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, Sparkles } from 'lucide-react';
+import { apiConfig } from '@/lib/config';
+import { getAuthToken } from '@/lib/auth';
 
 export default function Home() {
   const [isMoodCheckInOpen, setIsMoodCheckInOpen] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userRole, setUserRole] = useState('');
   const [mounted, setMounted] = useState(false);
+  const [hasCheckedInToday, setHasCheckedInToday] = useState(false);
+  const [latestMood, setLatestMood] = useState<any>(null);
+  const [checkinCount, setCheckinCount] = useState(0);
 
   useEffect(() => {
     setMounted(true);
@@ -36,10 +41,30 @@ export default function Home() {
 
   const checkAuthStatus = () => {
     if (typeof window === 'undefined') return;
-    const token = localStorage.getItem('auth_token');
+    const token = getAuthToken();
     const role = localStorage.getItem('userRole');
     setIsLoggedIn(!!token);
     setUserRole(role || '');
+    
+    if (token) {
+      checkMoodStatus(token);
+    }
+  };
+
+  const checkMoodStatus = async (token: string) => {
+    try {
+      const response = await fetch(`${apiConfig.baseUrl}/mood-checkin/today-status`, {
+        headers: { "Authorization": `Bearer ${token}` }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setHasCheckedInToday(data.hasCheckedIn);
+        setCheckinCount(data.count || 0);
+        setLatestMood(data.latest || null);
+      }
+    } catch (error) {
+      console.error("Error checking mood status:", error);
+    }
   };
 
   const getDashboardUrl = () => {
@@ -62,18 +87,25 @@ export default function Home() {
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
               <div className="flex flex-col sm:flex-row items-center justify-between gap-8">
                 <div className="flex-1">
+                  <div className="inline-flex items-center gap-2 bg-blue-50 px-4 py-2 rounded-full border border-blue-100 text-blue-600 font-bold text-[10px] uppercase tracking-wider mb-4">
+                    <Sparkles size={12} className="animate-pulse" />
+                    {hasCheckedInToday ? "Daily Journey" : "Self-Care Daily"}
+                  </div>
                   <h2 className="text-3xl font-bold text-slate-900 mb-2">
-                    How are you feeling today?
+                    {hasCheckedInToday ? "Is there any mood change?" : "How are you feeling today?"}
                   </h2>
                   <p className="text-slate-600 mb-6">
-                    Take a quick mood check-in to help us personalize your wellness experience. Your insights help us provide better support.
+                    {hasCheckedInToday 
+                      ? (latestMood?.analysis ? `"${latestMood.analysis}"` : `You've logged ${checkinCount} mood${checkinCount !== 1 ? 's' : ''} today. Each data point helps refine your wellness journey.`)
+                      : "Take a quick mood check-in to help us personalize your wellness experience. Your insights help us provide better support."
+                    }
                   </p>
                   <div className="flex flex-col sm:flex-row gap-4">
                     <Button
                       onClick={() => setIsMoodCheckInOpen(true)}
                       className="bg-blue-600 hover:bg-blue-700 text-white rounded-full px-8 py-3 flex items-center gap-2"
                     >
-                      Start Mood Check-in
+                      {hasCheckedInToday ? "Update Mood" : "Start Mood Check-in"}
                       <ArrowRight size={18} />
                     </Button>
                     <Link href={getDashboardUrl()}>
@@ -90,7 +122,7 @@ export default function Home() {
                   <div className="relative w-full max-w-xs">
                     <div className="absolute inset-0 bg-gradient-to-r from-blue-200 to-cyan-200 rounded-full blur-2xl opacity-50"></div>
                     <div className="relative bg-white rounded-full p-12 shadow-lg flex items-center justify-center">
-                      <div className="text-6xl">🧘</div>
+                      <div className="text-6xl">{hasCheckedInToday ? "🌟" : "🧘"}</div>
                     </div>
                   </div>
                 </div>
@@ -137,6 +169,7 @@ export default function Home() {
         isOpen={isMoodCheckInOpen}
         onClose={() => setIsMoodCheckInOpen(false)}
         onSuccess={(summary) => {
+          checkAuthStatus();
           console.log('Mood check-in completed:', summary);
         }}
         isSimplified={true}

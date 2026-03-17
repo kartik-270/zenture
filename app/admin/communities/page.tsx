@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import { Users, Plus, Trash2, MessageCircle } from "lucide-react";
 import AdminLayout from "@/components/admin/layout";
 import { apiConfig } from "@/lib/config";
+import { getAuthToken } from "@/lib/auth";
 import { useToast } from "@/components/ui/use-toast";
 import { ProtectedRoute } from "@/components/protected-route";
 import { useRouter } from "next/navigation";
@@ -44,7 +45,7 @@ function AdminCommunitiesContent() {
     const fetchCommunities = async () => {
         setLoading(true);
         try {
-            const token = localStorage.getItem("authToken");
+            const token = getAuthToken();
             const res = await fetch(`${apiConfig.baseUrl}/communities`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
@@ -67,7 +68,7 @@ function AdminCommunitiesContent() {
             toast({ title: "Name is required", variant: "destructive" });
             return;
         }
-        const token = localStorage.getItem("authToken");
+        const token = getAuthToken();
         try {
             const res = await fetch(`${apiConfig.baseUrl}/communities`, {
                 method: "POST",
@@ -97,7 +98,7 @@ function AdminCommunitiesContent() {
     const handleDeleteCommunity = async (id: number, name: string) => {
         if (!window.confirm(`Are you sure you want to completely delete the community "${name}" and all its posts?`)) return;
 
-        const token = localStorage.getItem("authToken");
+        const token = getAuthToken();
         try {
             const res = await fetch(`${apiConfig.baseUrl}/communities/${id}`, {
                 method: "DELETE",

@@ -85,28 +85,6 @@ const PieChart = ({ data }: { data: { label: string; value: number; color: strin
   );
 };
 
-const AnxietyAnalysisChart = ({ data }: { data: any[] }) => {
-  if (!data) return null;
-  return (
-    <div className="space-y-4">
-      {data.map((item, i) => (
-        <div key={i} className="space-y-1">
-          <div className="flex justify-between text-xs font-black uppercase tracking-widest">
-            <span className="text-slate-500">{item.factor}</span>
-            <span className="text-slate-900">{item.severity}%</span>
-          </div>
-          <div className="h-3 w-full bg-slate-100 rounded-full overflow-hidden border border-slate-200/50">
-            <div
-              className="h-full bg-gradient-to-r from-blue-400 to-blue-600 transition-all duration-1000 ease-out shadow-sm"
-              style={{ width: `${item.severity}%` }}
-            />
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-};
-
 // --- Main Dashboard Content ---
 
 export default function AdminDashboard() {
@@ -119,9 +97,18 @@ export default function AdminDashboard() {
 
 function AdminDashboardContent() {
   const router = useRouter();
+  const [username, setUsername] = useState("Admin");
   const [stats, setStats] = useState<any>(null);
   const [upcomingAppointments, setUpcomingAppointments] = useState<any[]>([]);
   const [highRiskToday, setHighRiskToday] = useState<any[]>([]);
+  
+  // New Analytics States
+  const [engagementData, setEngagementData] = useState<any>(null);
+  const [moodData, setMoodData] = useState<any[]>([]);
+  const [resourceData, setResourceData] = useState<any[]>([]);
+  const [forumActivity, setForumActivity] = useState<any>(null);
+  const [counselorStatus, setCounselorStatus] = useState<any>(null);
+  
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -133,6 +120,9 @@ function AdminDashboardContent() {
   const { toast } = useToast();
 
   useEffect(() => {
+    const storedUsername = localStorage.getItem("username");
+    if (storedUsername) setUsername(storedUsername);
+
     const token = getAuthToken();
     if (!token) return;
 
@@ -142,11 +132,15 @@ function AdminDashboardContent() {
 
     socket.on('connect', () => {
       console.log('Admin connected to Socket.IO');
-      socket.emit('join', { room: 'admin' });
+      socket.emit('join-room', { roomId: 'admin', userId: 'admin-user' });
     });
 
     socket.on('high-risk-alert', (data) => {
       setLiveAlerts(prev => [data, ...prev]);
+      setStats((prev: any) => ({
+        ...prev,
+        unacknowledgedAlerts: (prev?.unacknowledgedAlerts || 0) + 1
+      }));
       toast({
         title: "URGENT: Crisis Detection",
         description: `Potential high-risk activity detected for ${data.username}.`,
@@ -166,23 +160,63 @@ function AdminDashboardContent() {
       return;
     }
 
+    const headers = { Authorization: `Bearer ${token}` };
+
     try {
-      const responses = await Promise.all([
-        fetch(`${apiConfig.baseUrl}/admin/analytics/overview`, { headers: { Authorization: `Bearer ${token}` } }),
-        fetch(`${apiConfig.baseUrl}/admin/upcoming-appointments`, { headers: { Authorization: `Bearer ${token}` } }),
-        fetch(`${apiConfig.baseUrl}/admin/alerts/high-risk/today`, { headers: { Authorization: `Bearer ${token}` } })
+      const [
+        appointRes,
+        engageRes,
+        moodRes,
+        resourceRes,
+        overviewRes,
+        counselorRes,
+        forumRes,
+        highRiskRes
+      ] = await Promise.all([
+        fetch(`${apiConfig.baseUrl}/admin/upcoming-appointments`, { headers }),
+        fetch(`${apiConfig.baseUrl}/admin/analytics/engagement`, { headers }),
+        fetch(`${apiConfig.baseUrl}/admin/analytics/mood`, { headers }),
+        fetch(`${apiConfig.baseUrl}/admin/analytics/resources`, { headers }),
+        fetch(`${apiConfig.baseUrl}/admin/analytics/overview`, { headers }),
+        fetch(`${apiConfig.baseUrl}/admin/analytics/counselors-status`, { headers }),
+        fetch(`${apiConfig.baseUrl}/admin/analytics/forum-activity`, { headers }),
+        fetch(`${apiConfig.baseUrl}/admin/alerts/high-risk`, { headers })
       ]);
 
-      if (responses.some(r => r.status === 401)) {
+      if ([appointRes, engageRes, moodRes, resourceRes, overviewRes, counselorRes, forumRes, highRiskRes].some(r => r.status === 401)) {
         router.push("/login");
         return;
       }
 
-      const [overview, upcoming, highRisk] = await Promise.all(responses.map(r => r.json()));
+      const [
+        upcoming,
+        engagement,
+        mood,
+        resources,
+        overview,
+        counselors,
+        forum,
+        highRisk
+      ] = await Promise.all([
+        appointRes.json(),
+        engageRes.json(),
+        moodRes.json(),
+        resourceRes.json(),
+        overviewRes.json(),
+        counselorRes.json(),
+        forumRes.json(),
+        highRiskRes.json()
+      ]);
 
-      setStats(overview);
       setUpcomingAppointments(upcoming);
-      setHighRiskToday(highRisk);
+      setEngagementData(engagement);
+      setMoodData(mood);
+      setResourceData(resources);
+      setStats(overview);
+      setCounselorStatus(counselors);
+      setForumActivity(forum);
+      setHighRiskToday(highRisk.filter((a: any) => !a.is_resolved));
+      
       setError(null);
     } catch (err) {
       console.error(err);
@@ -248,9 +282,9 @@ function AdminDashboardContent() {
         <div className="lg:col-span-3 space-y-8">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {[
-              { label: "Active Students", val: stats?.totalStudents || 0, icon: Users, color: "blue", trend: "+12%" },
-              { label: "System Alerts", val: stats?.highRiskCount || 0, icon: AlertTriangle, color: "red", trend: "-2%" },
-              { label: "Resources", val: stats?.resourceUsage || 0, icon: Flame, color: "orange", trend: "Popular" }
+              { label: "Total Users", val: stats?.totalUsers || 0, icon: Users, color: "blue", trend: stats?.activeUsers ? `${stats.activeUsers} Active` : "Syncing..." },
+              { label: "Crisis Alerts", val: stats?.unacknowledgedAlerts || 0, icon: AlertTriangle, color: "red", trend: "Action Required" },
+              { label: "Avg Session", val: stats?.avgSessionDuration || "0m 0s", icon: Flame, color: "orange", trend: "Intelligence" }
             ].map((m, i) => (
               <div key={i} className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm relative overflow-hidden group">
                 <div className={`absolute -right-4 -top-4 w-24 h-24 bg-${m.color}-50 rounded-full group-hover:scale-150 transition-transform duration-700`}></div>
@@ -308,16 +342,41 @@ function AdminDashboardContent() {
               <h3 className="text-xl font-black uppercase tracking-tighter flex items-center gap-3">
                 <TrendingUp className="text-blue-600" size={24} /> Engagement Growth
               </h3>
-              <LineChart data={stats?.weeklyEngagement || []} />
+              <div className="space-y-4">
+                 <div className="flex gap-4 text-[10px] font-black uppercase tracking-widest mb-2">
+                    <span className="flex items-center gap-1"><div className="w-2 h-2 bg-blue-600 rounded-full"></div> New Users</span>
+                    <span className="flex items-center gap-1"><div className="w-2 h-2 bg-orange-500 rounded-full"></div> Sessions</span>
+                 </div>
+                 <LineChart data={engagementData?.newUsers || []} />
+                 <div className="pt-4 border-t border-slate-50">
+                    <LineChart data={engagementData?.activeSessions || []} />
+                 </div>
+              </div>
             </div>
 
             <div className="bg-white p-10 rounded-[3rem] border border-slate-100 shadow-sm space-y-8">
-              <h3 className="text-xl font-black uppercase tracking-tighter">Anxiety Factors</h3>
+              <h3 className="text-xl font-black uppercase tracking-tighter">Mood Analysis</h3>
               <div className="space-y-6">
-                <AnxietyAnalysisChart data={stats?.anxietyFactors || [
-                  { factor: "Academic Stress", severity: 82 },
-                  { factor: "Future Anxiety", severity: 89 }
-                ]} />
+                 <div className="grid grid-cols-3 gap-2 text-[8px] font-black uppercase tracking-widest text-center mb-4">
+                    <div className="text-green-600">Low</div>
+                    <div className="text-orange-500">Medium</div>
+                    <div className="text-red-600">High</div>
+                 </div>
+                 <div className="space-y-4">
+                    {moodData.slice(-3).map((m, i) => (
+                        <div key={i} className="space-y-2">
+                            <div className="flex justify-between text-[10px] font-black uppercase tracking-widest">
+                                <span>{m.day}</span>
+                                <span className="text-slate-400">Total: {m.low + m.medium + m.high}</span>
+                            </div>
+                            <div className="h-4 w-full bg-slate-100 rounded-lg overflow-hidden flex border border-slate-200/50">
+                                <div className="h-full bg-green-500 transition-all duration-500" style={{ width: `${(m.low / (m.low + m.medium + m.high || 1)) * 100}%` }} />
+                                <div className="h-full bg-orange-500 transition-all duration-500" style={{ width: `${(m.medium / (m.low + m.medium + m.high || 1)) * 100}%` }} />
+                                <div className="h-full bg-red-500 transition-all duration-500" style={{ width: `${(m.high / (m.low + m.medium + m.high || 1)) * 100}%` }} />
+                            </div>
+                        </div>
+                    ))}
+                 </div>
               </div>
             </div>
           </div>
@@ -360,30 +419,56 @@ function AdminDashboardContent() {
             <div className="space-y-6">
               <div className="flex justify-between items-center border-b border-white/5 pb-4">
                 <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Online Now</span>
-                <span className="text-2xl font-black text-green-500">{stats?.activeCounsellors || 0}</span>
+                <span className="text-2xl font-black text-green-500">{counselorStatus?.online || 0}</span>
               </div>
               <div className="flex justify-between items-center border-b border-white/5 pb-4">
                 <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Available</span>
-                <span className="text-2xl font-black text-blue-400">{stats?.availableExperts || 0}</span>
+                <span className="text-2xl font-black text-blue-400">{counselorStatus?.available || 0}</span>
               </div>
               <div className="p-4 bg-white/5 rounded-2xl border border-white/5">
                 <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1">Response Efficiency</p>
-                <p className="text-sm font-black text-white uppercase tracking-tight">98.4% Satisfaction</p>
+                <p className="text-sm font-black text-white uppercase tracking-tight">{counselorStatus?.avgWaitTime || "Analyzing..."} Wait</p>
               </div>
             </div>
           </div>
 
           {/* Forum Activity */}
           <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm">
-            <h3 className="text-lg font-black uppercase tracking-tight mb-6">Social Reach</h3>
+            <h3 className="text-lg font-black uppercase tracking-tight mb-6 flex items-center gap-2">
+               <Globe className="text-blue-500" size={20} /> Social Reach
+            </h3>
             <div className="space-y-4">
               <div className="flex items-center justify-between">
-                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Global Users</span>
-                <span className="text-xl font-black text-slate-900">{stats?.totalStudents || 0}</span>
+                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">New Posts (24h)</span>
+                <span className="text-xl font-black text-slate-900">{forumActivity?.newPosts24h || 0}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Active Threads</span>
+                <span className="text-xl font-black text-slate-900">{forumActivity?.activeThreads || 0}</span>
               </div>
               <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
                 <div className="h-full bg-blue-600 rounded-full" style={{ width: '65%' }}></div>
               </div>
+            </div>
+          </div>
+
+          {/* Top Resources Section */}
+          <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm">
+            <h3 className="text-lg font-black uppercase tracking-tight mb-6">Top Resource Assets</h3>
+            <div className="space-y-4">
+              {resourceData && resourceData.length > 0 ? (
+                resourceData.slice(0, 5).map((res, i) => (
+                  <div key={i} className="flex justify-between items-center p-3 bg-slate-50 rounded-xl border border-slate-100">
+                    <div className="space-y-1">
+                        <p className="text-[10px] font-black text-slate-900 uppercase truncate max-w-[120px]">{res.title}</p>
+                        <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">{res.type}</p>
+                    </div>
+                    <span className="text-[10px] font-black text-blue-600">{res.views} Views</span>
+                  </div>
+                ))
+              ) : (
+                <p className="text-[10px] font-black text-slate-300 uppercase text-center py-4">No data yet</p>
+              )}
             </div>
           </div>
         </div>

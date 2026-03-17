@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import AdminLayout from "@/components/admin/layout";
 import { apiConfig } from "@/lib/config";
+import { getAuthToken } from "@/lib/auth";
 import { useToast } from "@/components/ui/use-toast";
 import { ProtectedRoute } from "@/components/protected-route";
 
@@ -48,7 +49,7 @@ function AdminReportsContent() {
 
     const fetchData = async () => {
         try {
-            const token = localStorage.getItem("authToken");
+            const token = getAuthToken();
             const headers = { Authorization: `Bearer ${token}` };
 
             const [ovRes, enRes, moRes, asRes] = await Promise.all([

@@ -92,7 +92,7 @@ export function MoodCheckinModal({ isOpen, onClose, onSuccess, isSimplified = fa
             if (response.ok) {
                 const data = await response.json();
                 setAnalysis(data.analysis);
-                if (!isSimplified) setStep(6);
+                setStep(6);
                 window.dispatchEvent(new Event('streak-updated'));
             }
         } catch (error) {

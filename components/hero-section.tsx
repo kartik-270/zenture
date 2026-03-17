@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Brain, Sparkles, Heart, Shield } from "lucide-react";
+import { getAuthToken, getUserRole } from "@/lib/auth";
 
 export function HeroSection() {
   const router = useRouter();
@@ -43,8 +44,8 @@ export function HeroSection() {
               <Button
                 size="lg"
                 onClick={() => {
-                  const token = localStorage.getItem('authToken');
-                  const role = localStorage.getItem('userRole');
+                  const token = getAuthToken();
+                  const role = getUserRole();
                   
                   if (!token) {
                     router.push('/signup');

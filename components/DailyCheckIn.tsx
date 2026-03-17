@@ -10,6 +10,7 @@ import { Sparkles, BarChart3, Clock, Lock, LogIn } from "lucide-react";
 interface MoodCheckinData {
     mood: string;
     intensity: number;
+    analysis?: string;
     timestamp: string;
 }
 
@@ -120,7 +121,9 @@ export function DailyCheckIn() {
                         </h2>
                         <p className="text-sm text-slate-500 max-w-lg leading-relaxed">
                             {hasCheckedInToday
-                                ? `You've logged ${checkinCount} ${checkinCount === 1 ? 'mood' : 'moods'} today. Each data point helps refine your wellness journey.`
+                                ? (latestMood?.analysis 
+                                    ? `"${latestMood.analysis}"`
+                                    : `You've logged ${checkinCount} ${checkinCount === 1 ? 'mood' : 'moods'} today. Each data point helps refine your wellness journey.`)
                                 : "Take 30 seconds to log your feelings and get a personalized wellness analysis."
                             }
                         </p>

@@ -25,6 +25,7 @@ import {
 } from "recharts";
 import AdminLayout from "@/components/admin/layout";
 import { apiConfig } from "@/lib/config";
+import { getAuthToken } from "@/lib/auth";
 import {
     StressRadarChart,
     WellnessGauge,
@@ -61,7 +62,7 @@ function ChatAnalyticsContent() {
 
     const fetchAnalytics = async () => {
         try {
-            const token = localStorage.getItem('authToken');
+            const token = getAuthToken();
             const headers = { 'Authorization': `Bearer ${token}` };
 
             const [chatbotRes, nlpRes, holisticRes] = await Promise.all([
