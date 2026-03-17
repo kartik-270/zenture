@@ -13,14 +13,14 @@ export const metadata: Metadata = {
   title: 'Zenture Wellness - Mental Health for College Students',
   description: 'Bridging the Gap: Mental Wellness for College Students. Access counseling, self-help resources, peer support, and wellness tools in one place.',
   generator: 'v0.app',
-  metadataBase: new URL('https://zenture.duckdns.org'), // Assuming this is the base URL from previous context
+  metadataBase: new URL('https://zenture-seven.vercel.app'), // Assuming this is the base URL from previous context
   alternates: {
     canonical: '/',
   },
   openGraph: {
     title: 'Zenture Wellness - Mental Health for College Students',
     description: 'Transforming college life with better mental health. Access expert counseling and community support tailored for students.',
-    url: 'https://zenture.duckdns.org',
+    url: 'https://zenture-seven.vercel.app',
     siteName: 'Zenture Wellness',
     images: [
       {
