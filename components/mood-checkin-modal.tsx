@@ -36,7 +36,12 @@ const sleepOptions = [
 
 const energyOptions = ["Low", "Medium", "High"];
 
-export function MoodCheckinModal({ isOpen, onClose, onSuccess, isSimplified = false }: MoodCheckinModalProps) {
+export function MoodCheckinModal({ 
+    isOpen, 
+    onClose, 
+    onSuccess, 
+    isSimplified = false
+}: MoodCheckinModalProps) {
     const [step, setStep] = useState(1);
     const [mood, setMood] = useState("");
     const [intensity, setIntensity] = useState(5);
@@ -70,6 +75,7 @@ export function MoodCheckinModal({ isOpen, onClose, onSuccess, isSimplified = fa
     const prevStep = () => setStep(prev => prev - 1);
 
     const handleSave = async (quickMood?: string) => {
+        console.log("DEBUG: handleSave called. step:", step, "isSimplified:", isSimplified, "quickMood:", quickMood);
         setIsSaving(true);
         try {
             const token = getAuthToken();
@@ -103,6 +109,7 @@ export function MoodCheckinModal({ isOpen, onClose, onSuccess, isSimplified = fa
     };
 
     const handleFacialScan = async (imageSrc: string) => {
+        console.log("DEBUG: handleFacialScan called.");
         setIsScanning(true);
         setScanError("");
         try {
@@ -128,16 +135,7 @@ export function MoodCheckinModal({ isOpen, onClose, onSuccess, isSimplified = fa
                 };
                 setMood(emotionMap[data.emotion] || "Calm");
 
-                // Log specifically to mood-checkin flow too if needed by backend
-                await fetch(`${apiConfig.baseUrl}/mood-checkin/facial-analysis`, {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                        ...(token && { "Authorization": `Bearer ${token}` })
-                    },
-                    body: JSON.stringify({ stress_level: data.stress_level })
-                });
-
+                // Only set local state, stop early persistence
                 setStep(2);
             } else {
                 setScanError(data.error || "Failed to analyze expression.");
@@ -199,6 +197,7 @@ export function MoodCheckinModal({ isOpen, onClose, onSuccess, isSimplified = fa
                                             if (isSaving) return;
                                             setMood(m.label);
                                             if (isSimplified) {
+                                                console.log("DEBUG: simplified mode - saving after Step 1 click");
                                                 handleSave(m.label);
                                             }
                                         }}

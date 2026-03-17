@@ -1,13 +1,37 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Brain, Sparkles, Heart, Shield } from "lucide-react";
-import { getAuthToken, getUserRole } from "@/lib/auth";
+import { getAuthToken, getUserRole, getUsername } from "@/lib/auth";
 
 export function HeroSection() {
   const router = useRouter();
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [username, setUsername] = useState<string | null>(null);
+  const [userRole, setUserRole] = useState<string | null>(null);
+
+  useEffect(() => {
+    const checkAuth = () => {
+      const token = getAuthToken();
+      const storedUsername = getUsername();
+      const role = getUserRole();
+      setIsLoggedIn(!!token);
+      setUsername(storedUsername);
+      setUserRole(role);
+    };
+
+    checkAuth();
+    window.addEventListener('storage', checkAuth);
+    window.addEventListener('storage-changed', checkAuth);
+    return () => {
+      window.removeEventListener('storage', checkAuth);
+      window.removeEventListener('storage-changed', checkAuth);
+    };
+  }, []);
+
   return (
     <section className="relative min-h-[85vh] gradient-bg overflow-hidden">
       {/* Background decorative elements */}
@@ -28,15 +52,23 @@ export function HeroSection() {
               </div>
               
               <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-slate-900 leading-tight">
-                Bridging the Gap:{" "}
-                <span className="bg-gradient-to-r from-cyan-500 to-cyan-700 bg-clip-text text-transparent">
-                  Mental Wellness
-                </span>{" "}
-                {/* for College Students */}
+                {isLoggedIn ? (
+                  <>Welcome back, <span className="bg-gradient-to-r from-cyan-500 to-cyan-700 bg-clip-text text-transparent">{username}!</span> 👋</>
+                ) : (
+                  <>
+                    Bridging the Gap:{" "}
+                    <span className="bg-gradient-to-r from-cyan-500 to-cyan-700 bg-clip-text text-transparent">
+                      Mental Wellness
+                    </span>
+                  </>
+                )}
               </h1>
               
               <p className="text-lg sm:text-xl text-slate-600 max-w-xl leading-relaxed">
-                Positive mental health is helping people live happier, healthier and longer lives.
+                {isLoggedIn 
+                  ? "Ready to continue your wellness journey? Let's take a positive step forward today with personalized support."
+                  : "Positive mental health is helping people live happier, healthier and longer lives."
+                }
               </p>
             </div>
 
@@ -44,25 +76,22 @@ export function HeroSection() {
               <Button
                 size="lg"
                 onClick={() => {
-                  const token = getAuthToken();
-                  const role = getUserRole();
-                  
-                  if (!token) {
+                  if (!isLoggedIn) {
                     router.push('/signup');
                     return;
                   }
 
-                  if (role === 'admin') {
+                  if (userRole === 'admin') {
                     router.push('/admin/dashboard');
-                  } else if (role === 'counselor' || role === 'counsellor') {
-                    router.push('/counsellor');
+                  } else if (userRole === 'counselor') {
+                    router.push('/admin/counselor-availability');
                   } else {
                     router.push('/dashboard');
                   }
                 }}
                 className="bg-gradient-to-r from-cyan-400 to-cyan-600 hover:from-cyan-500 hover:to-cyan-700 text-white rounded-full px-8 py-6 text-lg font-semibold shadow-lg shadow-cyan-200/50 transition-all hover:scale-105"
               >
-                Start your Journey Today
+                {isLoggedIn ? "Go to Your Dashboard" : "Start your Journey Today"}
               </Button>
               <Link href="/about">
                 <Button

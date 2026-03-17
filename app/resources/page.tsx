@@ -22,54 +22,54 @@ interface Resource {
 }
 
 const STATIC_RESOURCES: Resource[] = [
-  {
-    id: 's1',
-    title: '5-Minute Mindfulness Exercise',
-    description: 'A quick guided session to clear your mind and reduce immediate stress.',
-    type: 'exercise',
-    category: 'Mindfulness',
-    url: '#'
-  },
-  {
-    id: 's2',
-    title: 'Managing Exam Anxiety',
-    description: 'Effective strategies to stay calm and focused during high-pressure academic periods.',
-    type: 'article',
-    category: 'Academic',
-    url: '#'
-  },
-  {
-    id: 's3',
-    title: 'The Science of Resilience',
-    description: 'Understanding how we bounce back from adversity and how to build your own psychological strength.',
-    type: 'article',
-    category: 'General',
-    url: '#'
-  },
-  {
-    id: 's4',
-    title: 'Guided Sleep Meditation',
-    description: 'A soothing audio track designed to help you unwind and achieve better sleep quality.',
-    type: 'audio',
-    category: 'Sleep',
-    url: '#'
-  },
-  {
-    id: 's5',
-    title: 'Productivity & Mental Health',
-    description: 'Balancing your academic output with self-care to avoid burnout.',
-    type: 'video',
-    category: 'Academic',
-    url: '#'
-  },
-  {
-    id: 's6',
-    title: 'Building Healthy Boundaries',
-    description: 'Learn how to protect your energy and improve your relationships through clear communication.',
-    type: 'article',
-    category: 'Relationships',
-    url: '#'
-  }
+  // {
+  //   id: 's1',
+  //   title: '5-Minute Mindfulness Exercise',
+  //   description: 'A quick guided session to clear your mind and reduce immediate stress.',
+  //   type: 'exercise',
+  //   category: 'Mindfulness',
+  //   url: '#'
+  // },
+  // {
+  //   id: 's2',
+  //   title: 'Managing Exam Anxiety',
+  //   description: 'Effective strategies to stay calm and focused during high-pressure academic periods.',
+  //   type: 'article',
+  //   category: 'Academic',
+  //   url: '#'
+  // },
+  // {
+  //   id: 's3',
+  //   title: 'The Science of Resilience',
+  //   description: 'Understanding how we bounce back from adversity and how to build your own psychological strength.',
+  //   type: 'article',
+  //   category: 'General',
+  //   url: '#'
+  // },
+  // {
+  //   id: 's4',
+  //   title: 'Guided Sleep Meditation',
+  //   description: 'A soothing audio track designed to help you unwind and achieve better sleep quality.',
+  //   type: 'audio',
+  //   category: 'Sleep',
+  //   url: '#'
+  // },
+  // {
+  //   id: 's5',
+  //   title: 'Productivity & Mental Health',
+  //   description: 'Balancing your academic output with self-care to avoid burnout.',
+  //   type: 'video',
+  //   category: 'Academic',
+  //   url: '#'
+  // },
+  // {
+  //   id: 's6',
+  //   title: 'Building Healthy Boundaries',
+  //   description: 'Learn how to protect your energy and improve your relationships through clear communication.',
+  //   type: 'article',
+  //   category: 'Relationships',
+  //   url: '#'
+  // }
 ];
 
 export default function ResourcesPage() {
@@ -158,10 +158,10 @@ function ResourcesContent() {
 
   const getPlaceholderImage = (type: string) => {
     switch (type) {
-      case 'video': return "https://images.pexels.com/photos/1036856/pexels-photo-1036856.jpeg";
-      case 'audio': return "https://www.hellomyyoga.com/blog/wp-content/uploads/2024/02/what-is-guided-meditation.webp";
+  //     case 'video': return "https://images.pexels.com/photos/1036856/pexels-photo-1036856.jpeg";
+  //     case 'audio': return "https://www.hellomyyoga.com/blog/wp-content/uploads/2024/02/what-is-guided-meditation.webp";
       case 'article': return "https://cdn2.psychologytoday.com/assets/styles/manual_crop_3_2_600x400/public/teaser_image/blog_entry/2025-03/pexels-ivan-samkov-5676744.jpg?itok=gCTxLgRX";
-      case 'exercise': return "https://images.pexels.com/photos/4099238/pexels-photo-4099238.jpeg";
+  //     case 'exercise': return "https://images.pexels.com/photos/4099238/pexels-photo-4099238.jpeg";
       default: return "https://images.pexels.com/photos/4099238/pexels-photo-4099238.jpeg";
     }
   };
@@ -263,7 +263,7 @@ function ResourcesContent() {
                   >
                     <div className="w-full h-48 overflow-hidden relative">
                       <img
-                        src={item.url && (item.type === 'article' || item.url.match(/\.(jpeg|jpg|gif|png|webp)$/i)) ? getSourceUrl(item.url) : getPlaceholderImage(item.type)}
+                        src={item.url && (item.type === 'article' || item.url.match(/\.(jpeg|jpg|gif|png|webp)$/i)) ? getSourceUrl(item.url):""}
                         alt={item.title}
                         className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
                       />
