@@ -14,6 +14,9 @@ export const metadata: Metadata = {
   description: 'Bridging the Gap: Mental Wellness for College Students. Access counseling, self-help resources, peer support, and wellness tools in one place.',
   generator: 'v0.app',
   metadataBase: new URL('https://zenture-seven.vercel.app'), // Assuming this is the base URL from previous context
+  verification: {
+    google: '39eC-3uLPsyxpmG-CvFLWTAO9DheJfC_kXXIPYFO2ck',
+  },
   alternates: {
     canonical: '/',
   },
