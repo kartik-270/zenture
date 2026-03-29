@@ -146,6 +146,21 @@ function ResourcesContent() {
       const videoId = item.url.split("v=")[1].split("&")[0];
       return `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
     }
+
+    // Enhanced Image/Cloudinary Support
+    if (item.url) {
+      const isCloudinary = item.url.includes("cloudinary.com");
+      const isImage = /\.(jpg|jpeg|png|webp|avif|gif)$/i.test(item.url);
+      
+      if (isCloudinary || isImage) {
+        if (item.type === 'video' && isCloudinary) {
+          // Replace video extension with .jpg for the thumbnail frame
+          return item.url.replace(/\.(mp4|mov|avi|wmv|webm)$/, '.jpg');
+        }
+        return item.url; 
+      }
+    }
+
     // Generic covers based on type
     const covers = {
       video: "https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?q=80&w=1200",

@@ -224,9 +224,9 @@ export function MoodReports() {
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 {[
                     { label: "Total Logs", value: history.length, icon: <CheckCircle2 className="text-green-500 w-4 h-4" />, bg: "bg-green-50" },
-                    { label: "Deep Sleep", value: history[0]?.sleep || "N/A", icon: <History className="text-indigo-500 w-4 h-4" />, bg: "bg-indigo-50" },
+                    { label: "Deep Sleep", value: [...history].reverse().find(h => h.sleep)?.sleep || "N/A", icon: <History className="text-indigo-500 w-4 h-4" />, bg: "bg-indigo-50" },
                     { label: "Socialized", value: history.filter(h => h.social).length + " Days", icon: <Info className="text-orange-500 w-4 h-4" />, bg: "bg-orange-50" },
-                    { label: "Global Mood", value: `${averageWellness}/10`, icon: <TrendingUp className="text-blue-500 w-4 h-4" />, bg: "bg-blue-50" },
+                    { label: "Global Mood", value: `${history[history.length - 1]?.wellness_score?.toFixed(1) || history[history.length - 1]?.intensity || "N/A"}/10`, icon: <TrendingUp className="text-blue-500 w-4 h-4" />, bg: "bg-blue-50" },
                 ].map((stat, i) => (
                     <div key={i} className={`p-4 rounded-3xl border border-white shadow-sm flex flex-col gap-2 ${stat.bg}`}>
                         <div className="bg-white/80 w-8 h-8 rounded-xl flex items-center justify-center shadow-sm">

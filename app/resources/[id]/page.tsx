@@ -39,6 +39,32 @@ export default function ResourceDetailPage() {
   const [resource, setResource] = useState<Resource | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isCopied, setIsCopied] = useState(false);
+
+  const handleShare = async () => {
+    if (!resource) return;
+    
+    const shareData = {
+      title: `Zenture Wellness: ${resource.title}`,
+      text: resource.description,
+      url: window.location.href,
+    };
+
+    try {
+      if (navigator.share && navigator.canShare && navigator.canShare(shareData)) {
+        await navigator.share(shareData);
+      } else {
+        await navigator.clipboard.writeText(window.location.href);
+        setIsCopied(true);
+        setTimeout(() => setIsCopied(false), 2000);
+      }
+    } catch (err) {
+      // Ignore abort errors from user canceling the share sheet
+      if ((err as Error).name !== 'AbortError') {
+        console.error('Error sharing:', err);
+      }
+    }
+  };
 
   useEffect(() => {
     if (id) {
@@ -185,9 +211,13 @@ export default function ResourceDetailPage() {
               </div>
               
               <div className="flex gap-3">
-                <Button variant="outline" className="rounded-2xl h-12 px-6 border-slate-200 hover:bg-white hover:border-primary/50 transition-all font-bold group">
+                <Button 
+                  variant="outline" 
+                  onClick={handleShare}
+                  className={`rounded-2xl h-12 px-6 border-slate-200 hover:bg-white transition-all font-bold group ${isCopied ? 'text-green-600 border-green-200 bg-green-50' : 'hover:border-primary/50'}`}
+                >
                   <Share2 size={18} className="mr-2 group-hover:scale-110 transition-transform" />
-                  Share
+                  {isCopied ? 'Copied!' : 'Share'}
                 </Button>
               </div>
             </div>
@@ -214,6 +244,19 @@ export default function ResourceDetailPage() {
                   ) : (
                     <div className="flex items-center justify-center h-full text-slate-500 font-bold">Video Link Not Available</div>
                   )}
+                </div>
+              )}
+
+              {resource.type === 'article' && resource.url && (
+                <div className="rounded-[2.5rem] overflow-hidden shadow-2xl bg-slate-100 aspect-video md:aspect-[21/9] border-8 border-slate-100 group">
+                  <img 
+                    src={getSourceUrl(resource.url)} 
+                    alt={resource.title} 
+                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                    onError={(e) => {
+                       (e.target as HTMLImageElement).style.display = 'none';
+                    }}
+                  />
                 </div>
               )}
 
