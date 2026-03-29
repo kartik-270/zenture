@@ -74,9 +74,7 @@ const STATIC_RESOURCES: Resource[] = [
 
 export default function ResourcesPage() {
   return (
-    <ProtectedRoute requiredRole="student">
-      <ResourcesContent />
-    </ProtectedRoute>
+    <ResourcesContent />
   );
 }
 
@@ -121,6 +119,7 @@ function ResourcesContent() {
   };
 
   const handleCardClick = (item: Resource) => {
+    logResourceView(item.id);
     setCurrentItem(item);
     setIsModalOpen(true);
   };
@@ -142,6 +141,36 @@ function ResourcesContent() {
     return `https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0`;
   };
 
+  const getThumbnailUrl = (item: Resource) => {
+    if (item.url && item.url.includes("youtube.com/watch?v=")) {
+      const videoId = item.url.split("v=")[1].split("&")[0];
+      return `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
+    }
+    // Generic covers based on type
+    const covers = {
+      video: "https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?q=80&w=1200",
+      audio: "https://images.unsplash.com/photo-1516280440614-37939bbacd81?q=80&w=1200",
+      article: "https://images.unsplash.com/photo-1499750310107-5fef28a66643?q=80&w=1200",
+      exercise: "https://images.unsplash.com/photo-1506126613408-eca07ce68773?q=80&w=1200",
+      wellness: "https://images.unsplash.com/photo-1522071823991-b96767a1c56f?q=80&w=1200"
+    };
+    return covers[item.type] || covers.article;
+  };
+
+  const logResourceView = async (resourceId: string | number) => {
+    try {
+      const token = getAuthToken();
+      await fetch(`${apiConfig.baseUrl}/resources/${resourceId}`, {
+        method: 'GET',
+        headers: {
+          ...(token && { 'Authorization': `Bearer ${token}` }),
+        },
+      });
+    } catch (e) {
+      console.error("View log failed:", e);
+    }
+  };
+
   const filteredData = resources.filter(item => {
     const matchesFilter = activeFilter === 'all' || item.type === activeFilter;
     const itemLanguage = (item as any).language || "English";
@@ -156,12 +185,16 @@ function ResourcesContent() {
                             (activeLanguage === 'all' || activeLanguage === 'English') &&
                             ("Daily Wellness Corner".toLowerCase().includes(searchTerm.toLowerCase()));
 
+  const getCoverImageUrl = (item: Resource) => {
+    return getThumbnailUrl(item);
+  };
+
   const getPlaceholderImage = (type: string) => {
     switch (type) {
-  //     case 'video': return "https://images.pexels.com/photos/1036856/pexels-photo-1036856.jpeg";
-  //     case 'audio': return "https://www.hellomyyoga.com/blog/wp-content/uploads/2024/02/what-is-guided-meditation.webp";
+      case 'video': return "https://images.pexels.com/photos/1036856/pexels-photo-1036856.jpeg";
+      case 'audio': return "https://www.hellomyyoga.com/blog/wp-content/uploads/2024/02/what-is-guided-meditation.webp";
       case 'article': return "https://cdn2.psychologytoday.com/assets/styles/manual_crop_3_2_600x400/public/teaser_image/blog_entry/2025-03/pexels-ivan-samkov-5676744.jpg?itok=gCTxLgRX";
-  //     case 'exercise': return "https://images.pexels.com/photos/4099238/pexels-photo-4099238.jpeg";
+      case 'exercise': return "https://images.pexels.com/photos/4099238/pexels-photo-4099238.jpeg";
       default: return "https://images.pexels.com/photos/4099238/pexels-photo-4099238.jpeg";
     }
   };
@@ -261,13 +294,17 @@ function ResourcesContent() {
                     onClick={() => handleCardClick(item)}
                     className="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden cursor-pointer group hover:border-primary/50 hover:shadow-xl hover:-translate-y-1.5 transition-all duration-500 flex flex-col h-full"
                   >
-                    <div className="w-full h-48 overflow-hidden relative">
+                    <div className="w-full h-52 overflow-hidden relative">
                       <img
-                        src={item.url && (item.type === 'article' || item.url.match(/\.(jpeg|jpg|gif|png|webp)$/i)) ? getSourceUrl(item.url):""}
+                        src={getCoverImageUrl(item)}
                         alt={item.title}
                         className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
                       />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-6">
+                        <span className="text-white text-[10px] font-black uppercase tracking-widest bg-primary/80 backdrop-blur-md px-3 py-1.5 rounded-lg border border-white/20">
+                          View Details
+                        </span>
+                      </div>
                     </div>
                     <div className="p-6 flex flex-col flex-grow">
                       <div className="flex justify-between items-start mb-4">
@@ -362,8 +399,8 @@ function ResourcesContent() {
               )}
 
               {currentItem.type === "article" && currentItem.url && isDirectMedia(currentItem.url) && (
-                <div className="w-full h-64 overflow-hidden">
-                  <img src={getSourceUrl(currentItem.url)} alt="Header" className="w-full h-full object-cover opacity-60 grayscale hover:grayscale-0 transition-all duration-700" />
+                <div className="w-full h-72 overflow-hidden">
+                  <img src={getCoverImageUrl(currentItem)} alt="Header" className="w-full h-full object-cover hover:scale-105 transition-all duration-700" />
                 </div>
               )}
             </div>
@@ -397,16 +434,14 @@ function ResourcesContent() {
                 </div>
               )}
 
-              {currentItem.type === "article" && currentItem.url && currentItem.url !== '#' && (
-                <div className="flex gap-4">
-                   <a href={currentItem.url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-3 px-8 py-4 bg-slate-900 text-white font-bold rounded-2xl hover:bg-slate-800 transition-all shadow-lg hover:shadow-slate-900/20 active:scale-95">
+                <div className="flex flex-wrap gap-4">
+                   <Link href={`/resources/${currentItem.id}`} className="inline-flex items-center gap-3 px-8 py-4 bg-slate-900 text-white font-bold rounded-2xl hover:bg-slate-800 transition-all shadow-lg hover:shadow-slate-900/20 active:scale-95">
                     <BookOpen size={20} /> Read Full Document
-                  </a>
+                  </Link>
                   <Button variant="outline" className="h-14 px-8 rounded-2xl border-2 font-bold" onClick={() => setIsModalOpen(false)}>
                     Close
                   </Button>
                 </div>
-              )}
             </div>
           </div>
         </div>

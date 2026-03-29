@@ -203,7 +203,7 @@ export function DailyCheckIn() {
                                                 key={m.l}
                                                 onClick={() => handleQuickLog(m.l)}
                                                 disabled={isUpdating}
-                                                className={`w-12 h-12 flex items-center justify-center text-2xl rounded-xl transition-all hover:scale-110 active:scale-95 ${isSelected ? 'bg-white shadow-md border-2 border-blue-200 scale-110' : 'hover:bg-white/50 grayscale-[0.5] hover:grayscale-0'}`}
+                                                className={`w-12 h-12 flex items-center justify-center text-2xl rounded-xl transition-all hover:scale-110 active:scale-95 ${isSelected ? 'bg-white shadow-md border-2 border-blue-200 scale-110' : 'hover:bg-white/50'}`}
                                                 title={m.l}
                                             >
                                                 {m.e}

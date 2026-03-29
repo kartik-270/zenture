@@ -32,6 +32,10 @@ export default function SessionPage() {
   const [turnServers, setTurnServers] = useState<any>(FALLBACK_RTC_CONFIG);
   const [errorHeader, setErrorHeader] = useState("Access Denied");
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [isMobile, setIsMobile] = useState(false);
+  const [remoteMeta, setRemoteMeta] = useState<{ isMobile: boolean } | null>(null);
+  const [showInCallChat, setShowInCallChat] = useState(false);
+  const [sessionStartTime, setSessionStartTime] = useState<number | null>(null);
 
   // Feedback State
   const [showFeedback, setShowFeedback] = useState(false);
@@ -76,7 +80,7 @@ export default function SessionPage() {
   const handleRedirection = () => {
     const role = user?.role || localStorage.getItem('userRole') || 'student';
     if (role === 'counselor') {
-      router.push('/counsellor/dashboard');
+      router.push('/dashboard');
     } else if (role === 'admin') {
       router.push('/admin/dashboard');
     } else {
@@ -107,9 +111,39 @@ export default function SessionPage() {
       }
 
       if (role === 'counselor' || role === 'admin') {
+        // Mark session as ended for counselor/admin if they leave
+        if (appointmentId) {
+          try {
+            const token = getAuthToken();
+            await fetch(`${apiConfig.baseUrl}/appointments/${appointmentId}/end-session`, {
+              method: 'PUT',
+              headers: { 'Authorization': `Bearer ${token}` }
+            });
+          } catch (e) {
+            console.error("Failed to end session:", e);
+          }
+        }
         handleRedirection();
       } else {
-        setShowFeedback(true);
+        // Only show feedback to students if they joined at least 15 minutes ago
+        const duration = sessionStartTime ? (Date.now() - sessionStartTime) / 1000 : 0;
+        if (duration >= 900) { // 15 minutes
+          setShowFeedback(true);
+        } else {
+          // If less than 15 mins, just redirect
+          if (appointmentId) {
+            try {
+              const token = getAuthToken();
+              await fetch(`${apiConfig.baseUrl}/appointments/${appointmentId}/end-session`, {
+                method: 'PUT',
+                headers: { 'Authorization': `Bearer ${token}` }
+              });
+            } catch (e) {
+              console.error("Failed to end session:", e);
+            }
+          }
+          handleRedirection();
+        }
       }
     }
   };
@@ -170,9 +204,14 @@ export default function SessionPage() {
     const verifyAccess = async () => {
       const token = getAuthToken();
       if (!token) {
-        fail("Authentication Required", "Please log in to join the session.");
+        setLoading(false);
         return;
       }
+      
+      // Device detection
+      const mobileRegex = /iPhone|iPad|iPod|Android|webOS|BlackBerry|IEMobile|Opera Mini/i;
+      setIsMobile(mobileRegex.test(navigator.userAgent));
+
       try {
         const res = await fetch(`${apiConfig.baseUrl}/session/verify/${sessionId}`, {
           headers: { 'Authorization': `Bearer ${token}` }
@@ -192,6 +231,18 @@ export default function SessionPage() {
           const remaining = Math.max(0, Math.ceil((bucket - elapsed) / 1000));
 
           setTimeLeft(remaining);
+          setSessionStartTime(Date.now());
+
+          // Mark session as started in backend if not already
+          try {
+            const token = getAuthToken();
+            await fetch(`${apiConfig.baseUrl}/appointments/${data.appointment_id}/start-session`, {
+              method: 'PUT',
+              headers: { 'Authorization': `Bearer ${token}` }
+            });
+          } catch (e) {
+            console.error("Failed to mark session start:", e);
+          }
 
           if (data.mode === 'message') setIsMuted(true);
 
@@ -265,11 +316,13 @@ export default function SessionPage() {
     socket.on('offer', async (data) => {
       setStatus("Incoming connection...");
       setPeerConnected(true);
+      if (data.metadata) setRemoteMeta(data.metadata);
       handleOffer(data);
     });
 
     socket.on('answer', async (data) => {
       setStatus("Connection established.");
+      if (data.metadata) setRemoteMeta(data.metadata);
       handleAnswer(data);
     });
 
@@ -358,7 +411,11 @@ export default function SessionPage() {
         if (pc.signalingState !== 'stable') return;
         const offer = await pc.createOffer();
         await pc.setLocalDescription(offer);
-        socketRef.current?.emit('offer', { roomId: sessionId, offer });
+        socketRef.current?.emit('offer', { 
+          roomId: sessionId, 
+          offer,
+          metadata: { isMobile }
+        });
       } catch (e) {
         console.error("Renegotiation error:", e);
       }
@@ -385,7 +442,11 @@ export default function SessionPage() {
     try {
       const offer = await pc.createOffer();
       await pc.setLocalDescription(offer);
-      socketRef.current?.emit('offer', { roomId: sessionId, offer });
+      socketRef.current?.emit('offer', { 
+        roomId: sessionId, 
+        offer,
+        metadata: { isMobile }
+      });
     } catch (err) {
       console.error("Offer Creation Error:", err);
     }
@@ -397,7 +458,11 @@ export default function SessionPage() {
       await pc.setRemoteDescription(new RTCSessionDescription(data.offer));
       const answer = await pc.createAnswer();
       await pc.setLocalDescription(answer);
-      socketRef.current?.emit('answer', { roomId: sessionId, answer });
+      socketRef.current?.emit('answer', { 
+        roomId: sessionId, 
+        answer,
+        metadata: { isMobile }
+      });
     } catch (err) {
       console.error("Handle Offer Error:", err);
     }
@@ -632,7 +697,16 @@ export default function SessionPage() {
             {sessionMode === 'video_call' ? (
               <>
                 {remoteStream ? (
-                  <video ref={remoteVideoRef} autoPlay playsInline className="absolute inset-0 w-full h-full object-cover" />
+                  <video 
+                    ref={remoteVideoRef} 
+                    autoPlay 
+                    playsInline 
+                    className={`absolute inset-0 w-full h-full ${
+                      (!remoteMeta?.isMobile && isMobile) 
+                        ? 'object-contain bg-black' // Laptop to Mobile scenario
+                        : 'object-cover'
+                    }`} 
+                  />
                 ) : (
                   <div className="flex flex-col items-center justify-center text-slate-500 animate-pulse">
                     <div className="w-20 h-20 bg-slate-700 rounded-full flex items-center justify-center mb-4">
@@ -650,6 +724,57 @@ export default function SessionPage() {
                     </div>
                   )}
                 </div>
+
+                {/* In-call Chat Overlay */}
+                {showInCallChat && (
+                  <div className="absolute right-6 top-24 bottom-28 w-[calc(100%-3rem)] max-w-[350px] bg-white/95 backdrop-blur-md rounded-[2.5rem] shadow-2xl z-40 flex flex-col text-gray-900 animate-in slide-in-from-right duration-500 overflow-hidden border border-white/20">
+                    <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 bg-blue-600 rounded-xl text-white">
+                          <MessageSquare size={18} />
+                        </div>
+                        <span className="font-black uppercase tracking-tighter text-lg">Live Chat</span>
+                      </div>
+                      <button onClick={() => setShowInCallChat(false)} className="w-10 h-10 flex items-center justify-center hover:bg-gray-200 rounded-full transition-colors text-gray-400 hover:text-gray-900">
+                        <X size={20} />
+                      </button>
+                    </div>
+                    
+                    <div className="flex-1 overflow-y-auto p-6 space-y-4 scrollbar-hide">
+                      {messages.length === 0 && (
+                        <div className="h-full flex flex-col items-center justify-center text-gray-400 opacity-60">
+                          <MessageSquare size={48} className="mb-4" />
+                          <p className="font-bold text-sm">No messages yet</p>
+                        </div>
+                      )}
+                      {messages.map((m, i) => (
+                        <div key={i} className={`flex ${m.sender === 'You' ? 'justify-end' : 'justify-start'}`}>
+                          <div className={`max-w-[85%] p-4 rounded-3xl text-sm font-medium shadow-sm leading-relaxed ${
+                            m.sender === 'You' 
+                              ? 'bg-blue-600 text-white rounded-br-none' 
+                              : 'bg-white text-gray-800 border border-gray-100 rounded-bl-none'
+                          }`}>
+                            <p>{m.text}</p>
+                          </div>
+                        </div>
+                      ))}
+                      <div ref={chatEndRef} />
+                    </div>
+                    
+                    <form onSubmit={sendMessage} className="p-4 bg-gray-50 border-t border-gray-100 flex gap-2">
+                      <input
+                        type="text"
+                        value={inputText}
+                        onChange={e => setInputText(e.target.value)}
+                        placeholder="Type a message..."
+                        className="flex-1 bg-white border-none rounded-2xl px-5 py-3 text-sm font-bold text-gray-700 focus:ring-2 focus:ring-blue-500 outline-none shadow-inner"
+                      />
+                      <button type="submit" className="bg-blue-600 text-white p-3 rounded-2xl hover:bg-blue-700 transition-all shadow-lg shadow-blue-200 active:scale-95">
+                        <Send size={20} />
+                      </button>
+                    </form>
+                  </div>
+                )}
               </>
             ) : (
               <div className="flex flex-col items-center justify-center space-y-8">
@@ -687,7 +812,7 @@ export default function SessionPage() {
           <PhoneOff className="w-6 h-6" />
         </button>
 
-        <button onClick={() => alert("Quick chat overlay coming soon!")} className="p-4 rounded-full bg-slate-700 text-white hover:bg-slate-600 transform hover:scale-110">
+        <button onClick={() => setShowInCallChat(!showInCallChat)} className={`p-4 rounded-full transition transform hover:scale-110 ${showInCallChat ? "bg-blue-500 text-white" : "bg-slate-700 text-white"}`}>
           <MessageSquare />
         </button>
       </div>

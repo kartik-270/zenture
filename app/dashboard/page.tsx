@@ -11,6 +11,7 @@ import { MoodReports } from "@/components/mood-reports"
 import { RecommendedForYou } from "@/components/RecommendedForYou"
 import { ConnectAndShare } from "@/components/ConnectAndShare"
 import { AiChatBubble } from "@/components/ai-chat-bubble"
+import { PendingFeedbackPrompt } from "@/components/pending-feedback-prompt"
 import { 
   MessageSquare, 
   Calendar, 
@@ -178,6 +179,7 @@ function DashboardContent() {
         </div>
       </main>
 
+      <PendingFeedbackPrompt />
       <AiChatBubble />
       <Footer />
     </>

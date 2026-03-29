@@ -216,9 +216,9 @@ function WellnessModal({ onClose, streak, onComplete }: { onClose: () => void; s
     return (
         <>
             <ConfettiCanvas active={confetti} />
-            <div className="fixed inset-0 flex items-center justify-center z-[100] p-4">
-                <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
-                <div className={`relative z-10 w-full max-w-lg bg-gradient-to-br ${task.gradient} rounded-3xl shadow-2xl overflow-hidden animate-in fade-in-0 zoom-in-95 duration-300`}>
+            <div className="fixed inset-0 flex items-center justify-center z-[100] p-4 sm:p-6 text-slate-900">
+                <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={onClose} />
+                <div className={`relative z-10 w-full max-w-lg bg-gradient-to-br ${task.gradient} rounded-t-[2.5rem] sm:rounded-[2.5rem] shadow-2xl overflow-hidden animate-in fade-in slide-in-from-bottom-10 sm:zoom-in-95 duration-500 mt-auto sm:mt-0`}>
                     {/* Ambient orbs */}
                     <div className="absolute -top-8 -right-8 w-32 h-32 bg-white/20 rounded-full blur-2xl pointer-events-none" />
                     <div className="absolute -bottom-8 -left-8 w-40 h-40 bg-white/10 rounded-full blur-2xl pointer-events-none" />
@@ -249,18 +249,17 @@ function WellnessModal({ onClose, streak, onComplete }: { onClose: () => void; s
                             ))}
                         </div>
 
-                        {/* Timer + Streak row */}
-                        <div className="flex items-center gap-4">
-                            <div className="flex-1 flex flex-col items-center gap-3">
+                        <div className="flex flex-col sm:flex-row items-center gap-6">
+                            <div className="flex-1 w-full flex flex-col items-center gap-3">
                                 <CircularTimer seconds={timeLeft} total={task.duration} />
                                 <button onClick={handleStart}
-                                    className={`px-6 py-2.5 rounded-xl font-bold text-sm transition-all duration-300 ${finished ? "bg-green-400 text-white shadow-lg hover:scale-105" : running ? "bg-white/20 border-2 border-white/50 text-white hover:bg-white/30" : "bg-white text-purple-600 shadow-lg hover:scale-105"}`}>
+                                    className={`w-full max-w-[200px] px-6 py-3 rounded-2xl font-bold text-sm transition-all duration-300 ${finished ? "bg-green-400 text-white shadow-lg hover:scale-105" : running ? "bg-white/20 border-2 border-white/50 text-white hover:bg-white/30" : "bg-white text-purple-600 shadow-lg hover:scale-105"}`}>
                                     {finished ? "✅ Again" : running ? "⏸ Pause" : "▶ Start"}
                                 </button>
-                                {running && <p className="text-white/60 text-xs font-medium animate-pulse">Stay present…</p>}
-                                {finished && <p className="text-white font-bold text-sm animate-bounce">🎉 Well done!</p>}
+                                {running && <p className="text-white/60 text-xs font-bold animate-pulse">Stay present…</p>}
+                                {finished && <p className="text-white font-black text-sm animate-bounce">🎉 Well done!</p>}
                             </div>
-                            <div className="flex-1">
+                            <div className="flex-1 w-full">
                                 <GrowthStreakBadge streak={streak} />
                             </div>
                         </div>
@@ -295,36 +294,48 @@ export function DailyWellnessCorner() {
             {/* Card — same shape as resource cards */}
             <div
                 onClick={() => setOpen(true)}
-                className="bg-card rounded-xl shadow-sm border border-border overflow-hidden cursor-pointer group hover:border-purple-400/60 hover:shadow-lg transition-all duration-300 flex flex-col h-full"
+                className="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden cursor-pointer group hover:border-primary/50 hover:shadow-xl hover:-translate-y-1.5 transition-all duration-500 flex flex-col h-full"
             >
                 {/* Gradient thumbnail */}
-                <div className="w-full h-40 bg-gradient-to-br from-violet-400 via-purple-300 to-sky-300 flex flex-col items-center justify-center relative overflow-hidden">
+                <div className="w-full h-52 bg-gradient-to-br from-violet-400 via-purple-300 to-sky-300 flex flex-col items-center justify-center relative overflow-hidden">
                     <div className="absolute -top-4 -right-4 w-20 h-20 bg-white/20 rounded-full blur-xl" />
                     <div className="absolute -bottom-4 -left-4 w-20 h-20 bg-white/10 rounded-full blur-xl" />
-                    <span className="text-4xl z-10 group-hover:scale-110 transition-transform duration-300">🌬️</span>
-                    <div className="z-10 flex gap-1 mt-2">
+                    <span className="text-5xl z-10 group-hover:scale-125 transition-transform duration-700">🌬️</span>
+                    <div className="z-10 flex gap-1 mt-4">
                         {[0, 1, 2, 3, 4, 5, 6].map(i => (
-                            <Star key={i} size={10} className={i < streak ? "fill-amber-300 text-amber-300" : "fill-white/30 text-white/30"} />
+                            <Star key={i} size={12} className={i < streak ? "fill-amber-300 text-amber-300" : "fill-white/30 text-white/30"} />
                         ))}
+                    </div>
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-6">
+                        <span className="text-white text-[10px] font-black uppercase tracking-widest bg-purple-600/80 backdrop-blur-md px-3 py-1.5 rounded-lg border border-white/20">
+                           Open Corner
+                        </span>
                     </div>
                 </div>
 
                 {/* Body */}
-                <div className="p-4 flex flex-col flex-grow">
-                    <div className="flex justify-between items-start mb-2">
+                <div className="p-6 flex flex-col flex-grow">
+                    <div className="flex justify-between items-start mb-4">
                         <div className="flex items-center gap-2">
-                            <Wind size={16} className="text-purple-500 animate-pulse" />
-                            <p className="text-sm text-muted-foreground">Interactive</p>
+                            <Wind size={18} className="text-primary animate-pulse" />
+                            <p className="text-xs font-black text-slate-400 uppercase tracking-widest group-hover:text-slate-600 transition-colors">Interactive</p>
                         </div>
-                        <span className="text-[10px] bg-purple-100 text-purple-600 px-2 py-0.5 rounded-full font-medium">Wellness</span>
+                        <span className="text-[10px] font-black uppercase tracking-widest bg-purple-50 text-purple-600 px-3 py-1 rounded-full border border-purple-100">
+                           Wellness
+                        </span>
                     </div>
-                    <h3 className="text-md font-semibold text-foreground flex-grow line-clamp-2">Daily Wellness Corner</h3>
-                    <p className="text-sm text-muted-foreground mt-2 line-clamp-2">
+                    <h3 className="text-lg font-bold text-slate-900 group-hover:text-primary transition-colors line-clamp-2 leading-tight">Daily Wellness Corner</h3>
+                    <p className="text-sm text-slate-500 mt-3 line-clamp-2 leading-relaxed h-[2.5rem] overflow-hidden">
                         60-second mindful exercises — breathing, gratitude & body scan. Track your 7-day streak.
                     </p>
-                    <p className="text-xs text-purple-400 font-semibold mt-2">
-                        {streak > 0 ? `🔥 ${streak}-day streak` : "✦ Start your streak today"}
-                    </p>
+                    <div className="mt-5 pt-4 border-t border-slate-50 flex items-center justify-between">
+                        <span className="text-[10px] font-black text-purple-400 uppercase tracking-widest">
+                            {streak > 0 ? `🔥 ${streak}-day streak` : "✦ Start your streak"}
+                        </span>
+                        <div className="text-primary group-hover:translate-x-1 transition-transform">
+                             <Wind size={16} />
+                        </div>
+                    </div>
                 </div>
             </div>
 

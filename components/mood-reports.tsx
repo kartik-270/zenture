@@ -19,6 +19,7 @@ interface MoodEntry {
     sleep: string;
     social: boolean;
     energy: string;
+    wellness_score: number;
     analysis: string;
     date: string;
 }
@@ -73,15 +74,17 @@ export function MoodReports() {
             return {
                 label,
                 intensity: entry.intensity,
+                wellness: entry.wellness_score || entry.intensity, // Fallback for old records
                 mood: entry.mood,
                 rawDate: date
             };
         });
     }, [history, view]);
 
-    const averageIntensity = useMemo(() => {
+    const averageWellness = useMemo(() => {
         if (history.length === 0) return 0;
-        return (history.reduce((acc, curr) => acc + curr.intensity, 0) / history.length).toFixed(1);
+        const sum = history.reduce((acc, curr) => acc + (curr.wellness_score || curr.intensity), 0);
+        return (sum / history.length).toFixed(1);
     }, [history]);
 
     const getMoodIcon = (mood: string) => {
@@ -119,10 +122,10 @@ export function MoodReports() {
                         <div className="flex items-center justify-between">
                             <CardTitle className="text-lg flex items-center gap-2">
                                 <TrendingUp className="text-blue-600 w-5 h-5" />
-                                Mood Intensity Trend
+                                Wellness Score Trend
                             </CardTitle>
                             <div className="text-xs font-black bg-blue-100 text-blue-700 px-3 py-1 rounded-full uppercase tracking-widest">
-                                Avg: {averageIntensity}/10
+                                Avg Index: {averageWellness}/10
                             </div>
                         </div>
                         <CardDescription className="text-xs">Tracing your emotion strength over the {view} period.</CardDescription>
@@ -162,7 +165,7 @@ export function MoodReports() {
                                     />
                                     <Area
                                         type="monotone"
-                                        dataKey="intensity"
+                                        dataKey="wellness"
                                         stroke="#3b82f6"
                                         strokeWidth={3}
                                         fillOpacity={1}
@@ -223,7 +226,7 @@ export function MoodReports() {
                     { label: "Total Logs", value: history.length, icon: <CheckCircle2 className="text-green-500 w-4 h-4" />, bg: "bg-green-50" },
                     { label: "Deep Sleep", value: history[0]?.sleep || "N/A", icon: <History className="text-indigo-500 w-4 h-4" />, bg: "bg-indigo-50" },
                     { label: "Socialized", value: history.filter(h => h.social).length + " Days", icon: <Info className="text-orange-500 w-4 h-4" />, bg: "bg-orange-50" },
-                    { label: "Global Mood", value: `${averageIntensity}/10`, icon: <TrendingUp className="text-blue-500 w-4 h-4" />, bg: "bg-blue-50" },
+                    { label: "Global Mood", value: `${averageWellness}/10`, icon: <TrendingUp className="text-blue-500 w-4 h-4" />, bg: "bg-blue-50" },
                 ].map((stat, i) => (
                     <div key={i} className={`p-4 rounded-3xl border border-white shadow-sm flex flex-col gap-2 ${stat.bg}`}>
                         <div className="bg-white/80 w-8 h-8 rounded-xl flex items-center justify-center shadow-sm">
